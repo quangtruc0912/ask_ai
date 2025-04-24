@@ -161,8 +161,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 200, headers: corsHeaders }
     );
-  } catch (error) {
-    console.error('Error analyzing image:', error);
+  } catch {
+    console.error('Error analyzing image:');
     return NextResponse.json(
       {
         message: 'Failed to analyze image',

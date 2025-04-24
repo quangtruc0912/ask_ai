@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     
     // Log the request data for debugging
-    console.log('Ping POST received with data:', body);
+    console.log('Ping POST received data:', body);
     
     const response = NextResponse.json({
       status: 'ok',

@@ -4,8 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { loadStripe } from '@stripe/stripe-js';
 
+type TestData = {
+  sessionUrl: string;
+  cardNumbers: {
+    success: string;
+    decline: string;
+  };
+  expiryDate: string;
+  cvc: string;
+};
 
 // Test card data
 const TEST_CARDS = {
@@ -20,7 +28,7 @@ export default function PricingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showTestInfo, setShowTestInfo] = useState(false);
-  const [testData, setTestData] = useState<any>(null);
+  const [testData, setTestData] = useState<TestData | null>(null);
   const [copiedText, setCopiedText] = useState('');
   const [subscription, setSubscription] = useState<{
     isActive: boolean;

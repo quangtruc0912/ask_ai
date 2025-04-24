@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { adminAuth, adminDb } from '../../../lib/firebase';
-import { MAX_SCANS_PER_MONTH, isSameMonth } from '../../../lib/config';
+import {  isSameMonth } from '../../../lib/config';
 import { getSubscriptionStatus } from '../../utils/subscription';
 
 const openai = new OpenAI({

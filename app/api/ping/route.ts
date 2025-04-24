@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     });
     
     return addCorsHeaders(response);
-  } catch (error) {
+  } catch {
     const response = NextResponse.json({
       status: 'error',
       timestamp: new Date().toISOString(),

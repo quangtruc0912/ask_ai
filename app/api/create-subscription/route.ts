@@ -23,6 +23,8 @@ export async function POST(req: Request) {
       email,
     });
 
+    const baseUrl = `${req.headers.get('x-forwarded-proto') || 'http'}://${req.headers.get('host')}`;
+
     // Create a subscription session
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -33,8 +35,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?canceled=true`,
+      success_url: `${baseUrl}/pricing?success=true`,
+      cancel_url: `${baseUrl}/pricing?canceled=true`,
     });
 
     return NextResponse.json({ sessionUrl: session.url });

@@ -38,8 +38,8 @@ export async function GET(request: Request) {
     try {
       decodedToken = await adminAuth.verifyIdToken(token);
       console.log('Authenticated user:', decodedToken.uid);
-    } catch (error) {
-      console.error('Error verifying token:', error);
+    } catch {
+      console.error('Error verifying token:');
       return NextResponse.json(
         {
           message: 'Invalid token',
@@ -100,8 +100,8 @@ export async function GET(request: Request) {
       },
       { status: 200, headers: corsHeaders }
     );
-  } catch (error) {
-    console.error('Error getting user information:', error);
+  } catch {
+    console.error('Error getting user information:');
     return NextResponse.json(
       {
         message: 'Failed to get user information',

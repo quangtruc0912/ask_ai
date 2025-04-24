@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '../../../lib/firebase';
-import { MAX_SCANS_PER_MONTH, isSameMonth } from '../../../lib/config';
+import { isSameMonth } from '../../../lib/config';
+import { getSubscriptionStatus } from '../../utils/subscription';
+
+const FREE_TIER_LIMIT = 5;
+const PRO_TIER_LIMIT = 300;
 
 export async function GET(request: Request) {
   try {
@@ -35,6 +39,21 @@ export async function GET(request: Request) {
       );
     }
 
+    if (!decodedToken.email) {
+      return NextResponse.json(
+        { 
+          message: 'User email not found',
+          status: 400,
+          remainingScans: 0
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check subscription status
+    const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
+    const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
+
     // Get user data from database
     const userRef = adminDb.ref(`users/${decodedToken.uid}`);
     const userSnapshot = await userRef.once('value');
@@ -46,6 +65,7 @@ export async function GET(request: Request) {
     // Reset scan count if it's a new month
     if (!lastScan || !isSameMonth(now, lastScan)) {
       userData.scanCount = 0;
+      await userRef.update({ scanCount: 0 });
     }
 
     // Calculate reset date (first day of next month)
@@ -58,9 +78,16 @@ export async function GET(request: Request) {
         id: decodedToken.uid,
         email: decodedToken.email,
         scanCount: userData.scanCount,
-        remainingScans: MAX_SCANS_PER_MONTH - userData.scanCount,
+        remainingScans: scanLimit - userData.scanCount,
         resetDate: resetDate.toISOString(),
-        lastScan: userData.lastScan
+        lastScan: userData.lastScan,
+        subscription: {
+          isActive: subscriptionStatus.isActive,
+          expiresAt: subscriptionStatus.expiresAt,
+          planId: subscriptionStatus.planId,
+          scanLimit,
+          tier: subscriptionStatus.isActive ? 'pro' : 'free'
+        }
       }
     });
   } catch (error) {

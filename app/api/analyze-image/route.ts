@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { adminAuth, adminDb } from '../../../lib/firebase';
 import { MAX_SCANS_PER_MONTH, isSameMonth } from '../../../lib/config';
+import { getSubscriptionStatus } from '../../utils/subscription';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const FREE_TIER_LIMIT = 5;
+const PRO_TIER_LIMIT = 300;
 
 const prompt = `You are an expert image analyst. Analyze the following image and describe everything you can observe, including:
 - Objects and their relationships
@@ -49,6 +53,21 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!decodedToken.email) {
+      return NextResponse.json(
+        { 
+          message: 'User email not found',
+          status: 400,
+          remainingScans: 0
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check subscription status
+    const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
+    const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
+
     const { imageBase64 } = await request.json();
     
     if (!imageBase64) {
@@ -76,14 +95,15 @@ export async function POST(request: Request) {
     }
 
     // Check if user has exceeded monthly limit
-    if (userData.scanCount >= MAX_SCANS_PER_MONTH) {
+    if (userData.scanCount >= scanLimit) {
       return NextResponse.json(
         { 
-          message: 'Monthly scan limit reached',
+          message: subscriptionStatus.isActive ? 'Pro monthly scan limit reached' : 'Free tier scan limit reached',
           status: 429,
           remainingScans: 0,
-          limit: MAX_SCANS_PER_MONTH,
-          resetDate: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+          limit: scanLimit,
+          resetDate: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString(),
+          isProUser: subscriptionStatus.isActive
         },
         { status: 429 }
       );
@@ -122,7 +142,9 @@ export async function POST(request: Request) {
         id: decodedToken.uid,
         email: decodedToken.email,
         scanCount: userData.scanCount + 1,
-        remainingScans: MAX_SCANS_PER_MONTH - (userData.scanCount + 1)
+        remainingScans: scanLimit - (userData.scanCount + 1),
+        isProUser: subscriptionStatus.isActive,
+        scanLimit
       }
     });
   } catch (error) {

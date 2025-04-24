@@ -35,5 +35,7 @@ export const config = {
   matcher: [
     '/api/analyze-image',
     '/api/user-info',
+    '/api/check-subscription',
+    '/api/create-subscription',
   ],
 }; 

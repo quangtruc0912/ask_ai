@@ -1,36 +1,59 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const ALLOWED_ORIGIN = '*'; // Replace this
+
 export async function middleware(request: NextRequest) {
-  // Skip auth for OPTIONS requests (CORS preflight)
+  const origin = request.headers.get('origin');
+
+  // Handle CORS preflight
   if (request.method === 'OPTIONS') {
-    return NextResponse.next();
+    const preflight = new NextResponse(null, { status: 204 });
+
+    // Only allow requests from the specific origin
+    if (origin === ALLOWED_ORIGIN) {
+      preflight.headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    }
+
+    preflight.headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    preflight.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    preflight.headers.set('Access-Control-Max-Age', '86400');
+
+    return preflight;
   }
 
-  // Get the authorization header
+  // Validate Authorization header
   const authHeader = request.headers.get('authorization');
-  console.log(authHeader)
   if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json(
+    const res = NextResponse.json(
       { error: 'No token provided' },
       { status: 401 }
     );
+    if (origin === ALLOWED_ORIGIN) {
+      res.headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    }
+    return res;
   }
 
-  // For now, just pass the token through to the API route
-  // The API route will handle the actual token verification
+  // Pass token via custom header
   const requestHeaders = new Headers(request.headers);
-  console.log(authHeader)
   requestHeaders.set('x-auth-token', authHeader);
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  // Add CORS header to successful responses
+  if (origin === ALLOWED_ORIGIN) {
+    response.headers.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  }
+
+  return response;
 }
 
-// Configure which routes to run the middleware on
+// Middleware route matcher
 export const config = {
   matcher: [
     '/api/analyze-image',
@@ -38,4 +61,4 @@ export const config = {
     '/api/check-subscription',
     '/api/create-subscription',
   ],
-}; 
+};

@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const PARENT_FRAME = document.location.ancestorOrigins[0];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');

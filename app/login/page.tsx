@@ -28,34 +28,19 @@ export default function LoginPage() {
     }
   };
 
-  const sendResponse = (result: unknown) => {
-    window.parent.postMessage(JSON.stringify(result), PARENT_FRAME);
-  };
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.initAuth) {
-        const PROVIDER = new GoogleAuthProvider();
-        signInWithPopup(auth, PROVIDER)
-          .then(sendResponse)
-          .catch(sendResponse);
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push('/');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred');
       }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-
-  // const handleGoogleLogin = async () => {
-  //   try {
-  //     const provider = new GoogleAuthProvider();
-  //     await signInWithPopup(auth, provider);
-  //     router.push('/'); 
-  //   } catch (error: any) {
-  //     setError(error.message);
-  //   }
-  // };
+    }
+  };
 
 
 
@@ -126,7 +111,7 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* <div className="mt-6">
+        <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
@@ -150,7 +135,7 @@ export default function LoginPage() {
               Sign in with Google
             </button>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

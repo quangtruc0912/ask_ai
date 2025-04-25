@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+const PARENT_FRAME = document.location.ancestorOrigins[0];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,6 +28,25 @@ export default function LoginPage() {
     }
   };
 
+  const sendResponse = (result: unknown) => {
+    window.parent.postMessage(JSON.stringify(result), PARENT_FRAME);
+  };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.initAuth) {
+        const PROVIDER = new GoogleAuthProvider();
+        signInWithPopup(auth, PROVIDER)
+          .then(sendResponse)
+          .catch(sendResponse);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+
   // const handleGoogleLogin = async () => {
   //   try {
   //     const provider = new GoogleAuthProvider();
@@ -35,6 +56,8 @@ export default function LoginPage() {
   //     setError(error.message);
   //   }
   // };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

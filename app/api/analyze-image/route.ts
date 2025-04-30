@@ -8,6 +8,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+interface ChatMessage {
+  role: string;
+  content: string;
+}
+
 const FREE_TIER_LIMIT = 5;
 const PRO_TIER_LIMIT = 300;
 
@@ -181,10 +186,10 @@ export async function POST(request: Request) {
 
         // Add conversation history if provided
         if (conversationHistory?.length > 0) {
-          messages.push(...conversationHistory.map((msg: any) => ({
-            role: msg.role,
-            content: msg.content
-          })));
+          messages.push({
+            role: "user",
+            content: `${chatPrompt}\n\nPrevious conversation:\n${(conversationHistory as ChatMessage[])?.map((msg) => `${msg.role}: ${msg.content}`).join('\n') || 'No previous conversation.'}\n\nCurrent request: ${chatMessage}`,
+          });
         }
 
         // Add current message
@@ -220,12 +225,15 @@ export async function POST(request: Request) {
 
       messages.push({
         role: "system",
-        content: `You are analyzing an image with the following description:\n${imageAnalysis}\n\nYou only respond to questions related to description about this image. If asked about something unrelated, respond with: "I can only answer questions about the image shown. Please ask about the image content."`
+        content: `You are analyzing an image with the following description:\n${imageAnalysis}\n\nYou only respond to questions related to description about this image.
+         If asked about something unrelated, respond with: "I can only answer questions about the image shown. Please ask about the image content.
+         Or if there is no image description, respond with : "Please upload an image for me to analyze. I can only answer questions based on the content of the image."
+         "`
       });
 
       messages.push({
         role: "user",
-        content: `${chatPrompt}\n\nPrevious conversation:\n${conversationHistory?.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n') || 'No previous conversation.'}\n\nCurrent request: ${chatMessage}`,
+        content: `${chatPrompt}\n\nPrevious conversation:\n${(conversationHistory as ChatMessage[])?.map((msg) => `${msg.role}: ${msg.content}`).join('\n') || 'No previous conversation.'}\n\nCurrent request: ${chatMessage}`,
       });
 
       const response = await openai.chat.completions.create({

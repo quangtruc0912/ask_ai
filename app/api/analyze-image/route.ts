@@ -20,7 +20,7 @@ const basePrompt = `You are an expert image analyst. Analyze the following image
 
 Be clear and concise, but include as much detail as possible.`;
 
-const chatPrompt = `You are an expert assistant. Please help with the following question or request:`;
+const chatPrompt = `You are an expert image assistant. Please help with the following question or request:`;
 
 export async function POST(request: Request) {
   try {

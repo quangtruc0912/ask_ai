@@ -56,6 +56,7 @@ export async function middleware(request: NextRequest) {
 // Middleware route matcher
 export const config = {
   matcher: [
+    '/api/analyze-action',
     '/api/analyze-image',
     '/api/user-info',
     '/api/check-subscription',

@@ -4,6 +4,11 @@ import { adminAuth, adminDb } from '../../../lib/firebase';
 import { isSameMonth } from '../../../lib/config';
 import { getSubscriptionStatus } from '../../utils/subscription';
 
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -13,12 +18,19 @@ const PRO_TIER_LIMIT = 300;
 
 const basePrompt = `You are a smart assistant that answers all types of questions and can exchange pleasantries.
 
-If the input is a multiple-choice question with options A, B, C, and D, return only the correct letter and its option (A, B, C, or D).
+Use temporary memory to remember relevant context during the current session, such as the topic of previous questions or user preferences (e.g. format, tone).
 
-If the input is a regular (open-ended) question, return a short and direct answer.
-Do not include explanations—just the final answer.
+If the input is a multiple-choice question with options A, B, C, and D, return only the correct letter and its option (e.g., C. Paris). Do not explain.
 
-If you receive multiple questions (for example, as a list), answer each one in the same format, separating each answer clearly (for example, by numbering or newlines).`;
+If the input is a regular open-ended question, return a short and direct answer only—no explanations.
+
+If you receive multiple questions, answer each one in the same format, separated clearly (e.g., by numbering or newlines).
+
+For pleasantries (e.g., "Hi", "Thanks"), respond briefly and politely.
+
+Remember: adapt to the flow of the conversation using temporary memory to handle context, follow-ups, or repeated formats.
+
+`;
 
 
 export async function POST(request: Request) {
@@ -69,7 +81,7 @@ export async function POST(request: Request) {
     const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
     const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
 
-    const { imageBase64, chatMessage, prompt, isSystemPrompt } = await request.json();
+    const { imageBase64, chatMessage, prompt, isSystemPrompt, conversationHistory } = await request.json();
 
     if (!imageBase64 && !chatMessage) {
       return NextResponse.json(
@@ -130,6 +142,16 @@ export async function POST(request: Request) {
       }
     ];
 
+    // Add conversation history if provided
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationHistory.forEach((msg: ConversationMessage) => {
+        messages.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      });
+    }
+
     if (imageBase64) {
       // If image is provided, analyze the image for a question
       messages.push({
@@ -143,6 +165,50 @@ export async function POST(request: Request) {
             },
           },
         ],
+      });
+
+      // Use a single request to get both image description and answer
+      const combinedResponse = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'First, describe briefly what is in the image. Then, answer the question.',
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: chatMessage ? chatMessage : 'Analyze the image and answer any question it contains.' },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 300,
+      });
+
+      const combinedContent = combinedResponse.choices[0].message.content || '';
+      const parts = combinedContent.split('\n');
+      const imageDescription = parts[0];
+      const answer = parts.slice(1).join('\n').replace(/^\n/, '');
+
+      return NextResponse.json({
+        message: 'Request processed successfully',
+        status: 200,
+        response: answer,
+        imageDescription: imageDescription,
+        user: {
+          id: decodedToken.uid,
+          email: decodedToken.email,
+          scanCount,
+          remainingScans,
+          isProUser: subscriptionStatus.isActive,
+          scanLimit
+        }
       });
     } else if (chatMessage) {
       // If only text question is provided
@@ -162,6 +228,7 @@ export async function POST(request: Request) {
       message: 'Request processed successfully',
       status: 200,
       response: response.choices[0].message.content,
+      imageDescription: null,
       user: {
         id: decodedToken.uid,
         email: decodedToken.email,

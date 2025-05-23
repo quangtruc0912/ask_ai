@@ -16,22 +16,6 @@ const openai = new OpenAI({
 const FREE_TIER_LIMIT = 5;
 const PRO_TIER_LIMIT = 300;
 
-const basePrompt = `You are a smart assistant that answers all types of questions and can exchange pleasantries.
-
-Use temporary memory to remember relevant context during the current session, such as the topic of previous questions or user preferences (e.g. format, tone).
-
-If the input is a multiple-choice question with options A, B, C, and D, return only the correct letter and its option (e.g., C. Paris). Do not explain.
-
-If the input is a regular open-ended question, return a short and direct answer only—no explanations.
-
-If you receive multiple questions, answer each one in the same format, separated clearly (e.g., by numbering or newlines).
-
-For pleasantries (e.g., "Hi", "Thanks"), respond briefly and politely.
-
-Remember: adapt to the flow of the conversation using temporary memory to handle context, follow-ups, or repeated formats.
-
-`;
-
 
 export async function POST(request: Request) {
   try {
@@ -81,7 +65,9 @@ export async function POST(request: Request) {
     const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
     const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
 
-    const { imageBase64, chatMessage, prompt, isSystemPrompt, conversationHistory } = await request.json();
+    const { imageBase64, chatMessage, prompt, conversationHistory } = await request.json();
+
+    console.log('prompt',prompt)
 
     if (!imageBase64 && !chatMessage) {
       return NextResponse.json(
@@ -138,7 +124,7 @@ export async function POST(request: Request) {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
         role: 'system',
-        content: isSystemPrompt ? basePrompt : prompt,
+        content: prompt,
       }
     ];
 
@@ -188,18 +174,18 @@ export async function POST(request: Request) {
             ],
           },
         ],
-        max_tokens: 300,
+        max_tokens: 1000,
       });
 
       const combinedContent = combinedResponse.choices[0].message.content || '';
       const parts = combinedContent.split('\n');
       const imageDescription = parts[0];
-      const answer = parts.slice(1).join('\n').replace(/^\n/, '');
+      // const answer = parts.slice(1).join('\n').replace(/^\n/, '');
 
       return NextResponse.json({
         message: 'Request processed successfully',
         status: 200,
-        response: answer,
+        response: combinedContent,
         imageDescription: imageDescription,
         user: {
           id: decodedToken.uid,
@@ -221,7 +207,7 @@ export async function POST(request: Request) {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages,
-      max_tokens: 300,
+      max_tokens: 1000,
     });
 
     return NextResponse.json({

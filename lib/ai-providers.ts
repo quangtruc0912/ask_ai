@@ -1,0 +1,129 @@
+import OpenAI from 'openai';
+import { Anthropic } from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { CohereClient } from 'cohere-ai';
+import { ModelConfig } from './models';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Initialize Google AI client
+const googleAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
+
+// Initialize Cohere client
+const cohere = new CohereClient({
+  token: process.env.COHERE_API_KEY || '',
+});
+
+export interface AIResponse {
+  content: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+export async function generateResponse(
+  modelConfig: ModelConfig,
+  messages: any[],
+  maxTokens: number
+): Promise<AIResponse> {
+  switch (modelConfig.provider) {
+    case 'openai':
+      return handleOpenAI(modelConfig.id, messages, maxTokens);
+    case 'anthropic':
+      return handleAnthropic(modelConfig.id, messages, maxTokens);
+    case 'google':
+      return handleGoogle(modelConfig.id, messages, maxTokens);
+    case 'cohere':
+      return handleCohere(modelConfig.id, messages, maxTokens);
+    case 'meta':
+    case 'mistral':
+    case 'xai':
+      // These models would require additional setup and API keys
+      throw new Error(`Provider ${modelConfig.provider} not yet implemented`);
+    default:
+      throw new Error(`Unknown provider: ${modelConfig.provider}`);
+  }
+}
+
+async function handleOpenAI(modelId: string, messages: any[], maxTokens: number): Promise<AIResponse> {
+  const response = await openai.chat.completions.create({
+    model: modelId,
+    messages,
+    max_tokens: maxTokens,
+  });
+
+  return {
+    content: response.choices[0].message.content || '',
+    usage: response.usage ? {
+      promptTokens: response.usage.prompt_tokens,
+      completionTokens: response.usage.completion_tokens,
+      totalTokens: response.usage.total_tokens,
+    } : undefined,
+  };
+}
+
+async function handleAnthropic(modelId: string, messages: any[], maxTokens: number): Promise<AIResponse> {
+    const response = await anthropic.messages.create({
+      model: modelId,
+      max_tokens: maxTokens,
+      messages: messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content,
+      })),
+    });
+  
+    return {
+      content: response.content[0].text,
+      usage: {
+        promptTokens: response.usage.input_tokens,
+        completionTokens: response.usage.output_tokens,
+        totalTokens: response.usage.input_tokens + response.usage.output_tokens,
+      },
+    };
+  }
+
+async function handleGoogle(modelId: string, messages: any[], maxTokens: number): Promise<AIResponse> {
+  const model = googleAI.getGenerativeModel({ model: modelId });
+  
+  // Convert messages to Google AI format
+  const googleMessages = messages.map(msg => ({
+    role: msg.role,
+    parts: [{ text: msg.content }],
+  }));
+
+  const result = await model.generateContent({
+    contents: googleMessages,
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+    },
+  });
+
+  return {
+    content: result.response.text(),
+  };
+}
+
+async function handleCohere(modelId: string, messages: any[], maxTokens: number): Promise<AIResponse> {
+  // Convert messages to Cohere format
+  const prompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+
+  const response = await cohere.generate({
+    model: modelId,
+    prompt,
+    maxTokens: maxTokens,
+  });
+
+  return {
+    content: response.generations[0].text,
+  };
+} 

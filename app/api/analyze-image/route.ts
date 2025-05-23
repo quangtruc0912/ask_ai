@@ -1,21 +1,17 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { adminAuth, adminDb } from '../../../lib/firebase';
 import { isSameMonth } from '../../../lib/config';
 import { getSubscriptionStatus } from '../../utils/subscription';
+import { getModelConfig } from '../../../lib/models';
+import { generateResponse } from '../../../lib/ai-providers';
 
 export interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 const FREE_TIER_LIMIT = 5;
 const PRO_TIER_LIMIT = 300;
-
 
 export async function POST(request: Request) {
   try {
@@ -65,14 +61,37 @@ export async function POST(request: Request) {
     const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
     const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
 
-    const { imageBase64, chatMessage, prompt, conversationHistory } = await request.json();
-
-    console.log('prompt',prompt)
+    const { imageBase64, chatMessage, prompt, conversationHistory, modelId } = await request.json();
 
     if (!imageBase64 && !chatMessage) {
       return NextResponse.json(
         {
           message: 'No message or image provided',
+          status: 400,
+          remainingScans: 0
+        },
+        { status: 400 }
+      );
+    }
+
+    // Get model configuration
+    const modelConfig = getModelConfig(modelId || 'gpt-4-vision-preview');
+    if (!modelConfig) {
+      return NextResponse.json(
+        {
+          message: 'Invalid model selected',
+          status: 400,
+          remainingScans: 0
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check if model supports images when image is provided
+    if (imageBase64 && !modelConfig.supportsImages) {
+      return NextResponse.json(
+        {
+          message: 'Selected model does not support image analysis',
           status: 400,
           remainingScans: 0
         },
@@ -120,8 +139,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // Prepare messages for OpenAI
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+    // Prepare messages for AI
+    const messages: any[] = [
       {
         role: 'system',
         content: prompt,
@@ -139,7 +158,7 @@ export async function POST(request: Request) {
     }
 
     if (imageBase64) {
-      // If image is provided, analyze the image for a question
+      // If image is provided, analyze the image
       messages.push({
         role: 'user',
         content: [
@@ -152,50 +171,6 @@ export async function POST(request: Request) {
           },
         ],
       });
-
-      // Use a single request to get both image description and answer
-      const combinedResponse = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'First, describe briefly what is in the image. Then, answer the question.',
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: chatMessage ? chatMessage : 'Analyze the image and answer any question it contains.' },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 1000,
-      });
-
-      const combinedContent = combinedResponse.choices[0].message.content || '';
-      const parts = combinedContent.split('\n');
-      const imageDescription = parts[0];
-      // const answer = parts.slice(1).join('\n').replace(/^\n/, '');
-
-      return NextResponse.json({
-        message: 'Request processed successfully',
-        status: 200,
-        response: combinedContent,
-        imageDescription: imageDescription,
-        user: {
-          id: decodedToken.uid,
-          email: decodedToken.email,
-          scanCount,
-          remainingScans,
-          isProUser: subscriptionStatus.isActive,
-          scanLimit
-        }
-      });
     } else if (chatMessage) {
       // If only text question is provided
       messages.push({
@@ -204,17 +179,14 @@ export async function POST(request: Request) {
       });
     }
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      max_tokens: 1000,
-    });
+    // Generate response using the selected model
+    const response = await generateResponse(modelConfig, messages, modelConfig.maxTokens);
 
     return NextResponse.json({
       message: 'Request processed successfully',
       status: 200,
-      response: response.choices[0].message.content,
-      imageDescription: null,
+      response: response.content,
+      usage: response.usage,
       user: {
         id: decodedToken.uid,
         email: decodedToken.email,

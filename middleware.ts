@@ -61,6 +61,5 @@ export const config = {
     '/api/user-info',
     '/api/check-subscription',
     '/api/create-subscription',
-    '/api/available-models',
   ],
 };

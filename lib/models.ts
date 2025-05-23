@@ -131,10 +131,10 @@ export function getModelConfig(modelId: string): ModelConfig | undefined {
   return SUPPORTED_MODELS.find(model => model.id === modelId);
 }
 
-export function getAvailableModels(isProUser: boolean): ModelConfig[] {
-  return SUPPORTED_MODELS;
-}
+// export function getAvailableModels(isProUser: boolean): ModelConfig[] {
+//   return SUPPORTED_MODELS;
+// }
 
-export function getImageSupportedModels(isProUser: boolean): ModelConfig[] {
-  return SUPPORTED_MODELS.filter(model => model.supportsImages);
-} 
+// export function getImageSupportedModels(isProUser: boolean): ModelConfig[] {
+//   return SUPPORTED_MODELS.filter(model => model.supportsImages);
+// } 

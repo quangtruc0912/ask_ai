@@ -3,7 +3,8 @@ import { adminAuth, adminDb } from '../../../lib/firebase';
 import { isSameMonth } from '../../../lib/config';
 import { getSubscriptionStatus } from '../../utils/subscription';
 import { getModelConfig } from '../../../lib/models';
-import { generateResponse } from '../../../lib/ai-providers';
+import { generateResponse ,GenericMessage} from '../../../lib/ai-providers';
+
 
 export interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
     }
 
     // Prepare messages for AI
-    const messages: any[] = [
+    const messages: GenericMessage[] = [
       {
         role: 'system',
         content: prompt,

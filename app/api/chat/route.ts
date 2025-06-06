@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '../../../lib/firebase';
-import { isSameMonth } from '../../../lib/config';
+import { isSameMonth, getUserLimits, getNextMonthFirstDay, formatDateToISO } from '../../../lib/config';
 import { getSubscriptionStatus } from '../../utils/subscription';
 import { getModelConfig } from '../../../lib/models';
-import { generateResponse ,GenericMessage} from '../../../lib/ai-providers';
-
+import { generateResponse, GenericMessage } from '../../../lib/ai-providers';
 
 export interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
 }
-
-const FREE_TIER_LIMIT = 5;
-const PRO_TIER_LIMIT = 300;
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +19,7 @@ export async function POST(request: Request) {
         {
           message: 'No token provided',
           status: 401,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 401 }
       );
@@ -41,7 +37,7 @@ export async function POST(request: Request) {
         {
           message: 'Invalid token',
           status: 401,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 401 }
       );
@@ -52,7 +48,7 @@ export async function POST(request: Request) {
         {
           message: 'User email not found',
           status: 400,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 400 }
       );
@@ -60,7 +56,7 @@ export async function POST(request: Request) {
 
     // Check subscription status
     const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
-    const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
+    const { requestLimit } = getUserLimits(subscriptionStatus.isActive);
 
     const { imageBase64, chatMessage, prompt, conversationHistory, modelId } = await request.json();
 
@@ -69,7 +65,7 @@ export async function POST(request: Request) {
         {
           message: 'No message or image provided',
           status: 400,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 400 }
       );
@@ -82,7 +78,7 @@ export async function POST(request: Request) {
         {
           message: 'Invalid model selected',
           status: 400,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 400 }
       );
@@ -94,49 +90,49 @@ export async function POST(request: Request) {
         {
           message: 'Selected model does not support image analysis',
           status: 400,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 400 }
       );
     }
 
-    // Only check and update scan limits if image is provided
-    let scanCount = 0;
-    let remainingScans = 0;
+    // Only check and update request limits if image is provided
+    let requestCount = 0;
+    let remainingRequests = 0;
     if (imageBase64) {
       const userRef = adminDb.ref(`users/${decodedToken.uid}`);
       const userSnapshot = await userRef.once('value');
-      const userData = userSnapshot.val() || { scanCount: 0, lastScan: null };
+      const userData = userSnapshot.val() || { requestCount: 0, lastRequest: null };
 
       const now = new Date();
-      const lastScan = userData.lastScan ? new Date(userData.lastScan) : null;
+      const lastRequest = userData.lastRequest ? new Date(userData.lastRequest) : null;
 
-      // Reset scan count if it's a new month
-      if (!lastScan || !isSameMonth(now, lastScan)) {
-        userData.scanCount = 0;
+      // Reset request count if it's a new month
+      if (!lastRequest || !isSameMonth(now, lastRequest)) {
+        userData.requestCount = 0;
       }
 
       // Check if user has exceeded monthly limit
-      if (userData.scanCount >= scanLimit) {
+      if (userData.requestCount >= requestLimit) {
         return NextResponse.json(
           {
-            message: subscriptionStatus.isActive ? 'Pro monthly scan limit reached' : 'Free tier scan limit reached',
+            message: subscriptionStatus.isActive ? 'Pro monthly request limit reached' : 'Free tier request limit reached',
             status: 429,
-            remainingScans: 0,
-            limit: scanLimit,
-            resetDate: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString(),
+            remainingRequests: 0,
+            limit: requestLimit,
+            resetDate: formatDateToISO(getNextMonthFirstDay(now)),
             isProUser: subscriptionStatus.isActive
           },
           { status: 429 }
         );
       }
 
-      // Update scan count in database
-      scanCount = userData.scanCount + 1;
-      remainingScans = scanLimit - scanCount;
+      // Update request count in database
+      requestCount = userData.requestCount + 1;
+      remainingRequests = requestLimit - requestCount;
       await userRef.update({
-        scanCount,
-        lastScan: now.toISOString(),
+        requestCount,
+        lastRequest: formatDateToISO(now),
       });
     }
 
@@ -191,10 +187,10 @@ export async function POST(request: Request) {
       user: {
         id: decodedToken.uid,
         email: decodedToken.email,
-        scanCount,
-        remainingScans,
+        requestCount,
+        remainingRequests,
         isProUser: subscriptionStatus.isActive,
-        scanLimit
+        requestLimit
       }
     });
   } catch (error) {
@@ -203,7 +199,7 @@ export async function POST(request: Request) {
       {
         message: 'Failed to process request',
         status: 500,
-        remainingScans: 0
+        remainingRequests: 0
       },
       { status: 500 }
     );

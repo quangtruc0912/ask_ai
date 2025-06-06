@@ -57,9 +57,11 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/api/analyze-action',
-    '/api/analyze-image',
+    '/api/chat',
+    '/api/analyze-image-only',
     '/api/user-info',
     '/api/check-subscription',
     '/api/create-subscription',
+    '/api/write',
   ],
 };

@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 
 
@@ -87,7 +86,7 @@ export default function Home() {
               },
               {
                 title: "Monthly Quota",
-                description: "Generous monthly scan limit for all users",
+                description: "Generous monthly request limit for all users",
                 icon: "📊"
               }
             ].map((feature, index) => (

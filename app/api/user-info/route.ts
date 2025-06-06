@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '../../../lib/firebase';
-import { isSameMonth } from '../../../lib/config';
+import { isSameMonth, getUserLimits } from '../../../lib/config';
 import { getSubscriptionStatus } from '../../utils/subscription';
-
-const FREE_TIER_LIMIT = 5;
-const PRO_TIER_LIMIT = 300;
 
 export async function GET(request: Request) {
   try {
@@ -12,10 +9,10 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('x-auth-token');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
-        { 
+        {
           message: 'No token provided',
           status: 401,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 401 }
       );
@@ -30,10 +27,10 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error('Error verifying token:', error);
       return NextResponse.json(
-        { 
+        {
           message: 'Invalid token',
           status: 401,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 401 }
       );
@@ -41,10 +38,10 @@ export async function GET(request: Request) {
 
     if (!decodedToken.email) {
       return NextResponse.json(
-        { 
+        {
           message: 'User email not found',
           status: 400,
-          remainingScans: 0
+          remainingRequests: 0
         },
         { status: 400 }
       );
@@ -52,51 +49,42 @@ export async function GET(request: Request) {
 
     // Check subscription status
     const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
-    const scanLimit = subscriptionStatus.isActive ? PRO_TIER_LIMIT : FREE_TIER_LIMIT;
+    const { requestLimit } = getUserLimits(subscriptionStatus.isActive);
 
     // Get user data from database
     const userRef = adminDb.ref(`users/${decodedToken.uid}`);
     const userSnapshot = await userRef.once('value');
-    const userData = userSnapshot.val() || { scanCount: 0, lastScan: null };
-    
+    const userData = userSnapshot.val() || { requestCount: 0, lastRequest: null };
+
     const now = new Date();
-    const lastScan = userData.lastScan ? new Date(userData.lastScan) : null;
-    
-    // Reset scan count if it's a new month
-    if (!lastScan || !isSameMonth(now, lastScan)) {
-      userData.scanCount = 0;
-      await userRef.update({ scanCount: 0 });
+    const lastRequest = userData.lastRequest ? new Date(userData.lastRequest) : null;
+
+    // Reset request count if it's a new month
+    if (!lastRequest || !isSameMonth(now, lastRequest)) {
+      userData.requestCount = 0;
+      await userRef.update({ requestCount: 0 });
     }
 
-    // Calculate reset date (first day of next month)
-    const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-    return NextResponse.json({ 
-      message: 'User information retrieved successfully',
+    return NextResponse.json({
+      message: 'User info retrieved successfully',
       status: 200,
       user: {
         id: decodedToken.uid,
         email: decodedToken.email,
-        scanCount: userData.scanCount,
-        remainingScans: scanLimit - userData.scanCount,
-        resetDate: resetDate.toISOString(),
-        lastScan: userData.lastScan,
-        subscription: {
-          isActive: subscriptionStatus.isActive,
-          expiresAt: subscriptionStatus.expiresAt,
-          planId: subscriptionStatus.planId,
-          scanLimit,
-          tier: subscriptionStatus.isActive ? 'pro' : 'free'
-        }
+        requestCount: userData.requestCount,
+        remainingRequests: requestLimit - userData.requestCount,
+        isProUser: subscriptionStatus.isActive,
+        lastRequest: userData.lastRequest,
+        requestLimit
       }
     });
   } catch (error) {
-    console.error('Error getting user information:', error);
+    console.error('Error retrieving user info:', error);
     return NextResponse.json(
-      { 
-        message: 'Failed to get user information',
+      {
+        message: 'Failed to retrieve user info',
         status: 500,
-        remainingScans: 0
+        remainingRequests: 0
       },
       { status: 500 }
     );

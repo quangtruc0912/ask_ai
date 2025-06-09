@@ -9,8 +9,8 @@ export interface ModelConfig {
 export const SUPPORTED_MODELS: ModelConfig[] = [
   // OpenAI Models
   {
-    id: 'gpt-4-vision-preview',
-    name: 'GPT-4 Vision',
+    id: 'gpt-4o-mini',
+    name: 'GPT-4 Mini',
     provider: 'openai',
     maxTokens: 4096,
     supportsImages: true

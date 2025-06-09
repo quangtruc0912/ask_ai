@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     // Get model configuration
-    const modelConfig = getModelConfig(modelId || 'gpt-4-vision-preview');
+    const modelConfig = getModelConfig(modelId || 'gpt-4o-mini');
     if (!modelConfig) {
       return NextResponse.json(
         {

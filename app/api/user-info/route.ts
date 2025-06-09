@@ -63,19 +63,29 @@ export async function GET(request: Request) {
     if (!lastRequest || !isSameMonth(now, lastRequest)) {
       userData.requestCount = 0;
       await userRef.update({ requestCount: 0 });
+
     }
 
+    const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const expiresAt = subscriptionStatus.expiresAt ? new Date(new Date(subscriptionStatus.expiresAt).setMonth(subscriptionStatus.expiresAt.getMonth() + 1)) : null;
+
     return NextResponse.json({
-      message: 'User info retrieved successfully',
+      message: 'User information retrieved successfully',
       status: 200,
       user: {
         id: decodedToken.uid,
         email: decodedToken.email,
         requestCount: userData.requestCount,
         remainingRequests: requestLimit - userData.requestCount,
-        isProUser: subscriptionStatus.isActive,
+        resetDate: resetDate.toISOString(),
         lastRequest: userData.lastRequest,
-        requestLimit
+        subscription: {
+          isActive: subscriptionStatus.isActive,
+          expiresAt: expiresAt,
+          planId: subscriptionStatus.planId,
+          requestLimit,
+          tier: subscriptionStatus.isActive ? 'pro' : 'free'
+        }
       }
     });
   } catch (error) {

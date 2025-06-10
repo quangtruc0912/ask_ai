@@ -54,8 +54,11 @@ export async function POST(request: Request) {
     const { requestLimit } = getUserLimits(subscriptionStatus.isActive);
 
     const { imageBase64, prompt, modelId } = await request.json();
-
-    if (!imageBase64) {
+    
+    // Clean up the base64 string if it contains data URL prefix
+    const cleanBase64 = imageBase64?.replace(/^data:image\/\w+;base64,/, '');
+    
+    if (!cleanBase64) {
       return NextResponse.json(
         {
           message: 'No image provided',
@@ -67,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     // Get model configuration
-    const modelConfig = getModelConfig(modelId || 'gpt-4-vision-preview');
+    const modelConfig = getModelConfig(modelId || 'gpt-4o-mini');
     if (!modelConfig) {
       return NextResponse.json(
         {
@@ -135,14 +138,8 @@ export async function POST(request: Request) {
       },
       {
         role: 'user',
-        content: [
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/jpeg;base64,${imageBase64}`,
-            },
-          },
-        ],
+        imageBase64 : `data:image/jpeg;base64,${cleanBase64}`,
+        content: '',
       }
     ];
 

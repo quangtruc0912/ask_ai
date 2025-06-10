@@ -158,16 +158,10 @@ export async function POST(request: Request) {
       // If image is provided, analyze the image
       messages.push({
         role: 'user',
-        content: [
-          { type: 'text', text: chatMessage ? chatMessage : 'Analyze the image and answer any question it contains.' },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/jpeg;base64,${imageBase64}`,
-            },
-          },
-        ],
+        content: chatMessage ? chatMessage : 'Analyze the image and answer any question it contains.',
+        imageBase64: imageBase64
       });
+
     } else if (chatMessage) {
       // If only text question is provided
       messages.push({

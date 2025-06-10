@@ -3,6 +3,7 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI, Content } from '@google/generative-ai';
 import { CohereClient } from 'cohere-ai';
 import { ModelConfig } from './models';
+import type { TextBlock, ImageBlockParam, MessageParam } from '@anthropic-ai/sdk/resources/messages';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -29,11 +30,8 @@ export interface AIResponse {
 
 export interface GenericMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string | Array<{
-    type: 'text' | 'image_url';
-    text?: string;
-    image_url?: { url: string };
-  }>;
+  content: string;
+  imageBase64?: string; // Optional, only for user messages with images
 }
 
 export async function generateResponse(
@@ -64,10 +62,25 @@ async function handleOpenAI(
   messages: GenericMessage[],
   maxTokens: number
 ): Promise<AIResponse> {
-  const openaiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = messages.map((msg) => ({
-    role: msg.role,
-    content: typeof msg.content === 'string' ? msg.content : '',
-  }));
+  const openaiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = messages.map((msg) => {
+    if (msg.imageBase64 && msg.role === 'user') {
+      // User message with image
+      return {
+        role: 'user',
+        content: [
+          { type: 'text', text: msg.content },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${msg.imageBase64}` } }
+        ]
+      };
+    } else {
+      // All other messages (system, assistant, or user text-only)
+      return {
+        role: msg.role,
+        content: msg.content
+      };
+    }
+  });
+
 
   const response = await openai.chat.completions.create({
     model: modelId,
@@ -92,12 +105,23 @@ async function handleAnthropic(
   messages: GenericMessage[],
   maxTokens: number
 ): Promise<AIResponse> {
-  const anthropicMessages = messages
-    .filter(msg => msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system')
-    .map(msg => ({
-      role: msg.role === 'assistant' ? 'assistant' : 'user', // this will always be 'user' or 'assistant'
-      content: typeof msg.content === 'string' ? msg.content : '',
-    })) as { role: 'user' | 'assistant'; content: string }[];
+  const anthropicMessages: MessageParam[] = messages.map(msg => {
+    if (msg.imageBase64 && msg.role === 'user') {
+      const cleanBase64 = msg.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      return {
+        role: 'user',
+        content: [
+          { type: 'text', text: msg.content } as TextBlock,
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: cleanBase64 } } as ImageBlockParam
+        ]
+      };
+    } else {
+      return {
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      };
+    }
+  });
 
   const response = await anthropic.messages.create({
     model: modelId,
@@ -120,16 +144,23 @@ async function handleGoogle(
   messages: GenericMessage[],
   maxTokens: number
 ): Promise<AIResponse> {
-  const model = googleAI.getGenerativeModel({ model: modelId }); // <-- Make sure this is here
+  const model = googleAI.getGenerativeModel({ model: modelId });
 
-  const googleMessages: Content[] = messages.map(msg => ({
-    role: msg.role,
-    parts: [
-      {
-        text: typeof msg.content === 'string' ? msg.content : '', // Adjust as needed for images
-      },
-    ],
-  }));
+  const googleMessages: Content[] = messages.map(msg => {
+    const parts: any[] = [];
+    if (msg.content) {
+      parts.push({ text: msg.content });
+    }
+    if (msg.imageBase64) {
+      // Remove data URL prefix if present
+      const cleanBase64 = msg.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      parts.push({ inlineData: { data: cleanBase64, mimeType: 'image/jpeg' } });
+    }
+    return {
+      role: msg.role,
+      parts,
+    };
+  });
 
   const result = await model.generateContent({
     contents: googleMessages,

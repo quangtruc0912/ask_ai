@@ -147,12 +147,11 @@ async function handleGoogle(
   const model = googleAI.getGenerativeModel({ model: modelId });
 
   const googleMessages: Content[] = messages.map(msg => {
-    const parts: any[] = [];
+    const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
     if (msg.content) {
       parts.push({ text: msg.content });
     }
     if (msg.imageBase64) {
-      // Remove data URL prefix if present
       const cleanBase64 = msg.imageBase64.replace(/^data:image\/\w+;base64,/, '');
       parts.push({ inlineData: { data: cleanBase64, mimeType: 'image/jpeg' } });
     }

@@ -16,13 +16,6 @@ export const SUPPORTED_MODELS: ModelConfig[] = [
     supportsImages: true
   },
   {
-    id: 'gpt-4-turbo-preview',
-    name: 'GPT-4 Turbo',
-    provider: 'openai',
-    maxTokens: 4096,
-    supportsImages: false
-  },
-  {
     id: 'gpt-3.5-turbo',
     name: 'GPT-3.5 Turbo',
     provider: 'openai',

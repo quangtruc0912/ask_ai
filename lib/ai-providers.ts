@@ -80,8 +80,6 @@ async function handleOpenAI(
       };
     }
   });
-
-
   const response = await openai.chat.completions.create({
     model: modelId,
     messages: openaiMessages,
@@ -105,14 +103,22 @@ async function handleAnthropic(
   messages: GenericMessage[],
   maxTokens: number
 ): Promise<AIResponse> {
-  const anthropicMessages: MessageParam[] = messages.map(msg => {
+  // Extract system message if present
+  const systemMessage = messages.find(msg => msg.role === 'system');
+  const nonSystemMessages = messages.filter(msg => msg.role !== 'system');
+
+  const anthropicMessages: MessageParam[] = nonSystemMessages.map(msg => {
     if (msg.imageBase64 && msg.role === 'user') {
-      const cleanBase64 = msg.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      // Extract media type from the base64 string if present
+      const base64Match = msg.imageBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+      const mediaType = base64Match ? `image/${base64Match[1]}` : 'image/jpeg';
+      const cleanBase64 = base64Match ? base64Match[2] : msg.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      
       return {
         role: 'user',
         content: [
           { type: 'text', text: msg.content } as TextBlock,
-          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: cleanBase64 } } as ImageBlockParam
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: cleanBase64 } } as ImageBlockParam
         ]
       };
     } else {
@@ -127,6 +133,7 @@ async function handleAnthropic(
     model: modelId,
     max_tokens: maxTokens,
     messages: anthropicMessages,
+    system: systemMessage?.content
   });
 
   return {

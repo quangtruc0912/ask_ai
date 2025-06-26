@@ -26,20 +26,20 @@ type TestData = {
 };
 
 // Test card data
-const TEST_CARDS = {
-  success: '4242 4242 4242 4242',
-  decline: '4000 0000 0000 0002',
-  expiry: 'Any future date',
-  cvc: 'Any 3 digits'
-};
+// const TEST_CARDS = {
+//   success: '4242 4242 4242 4242',
+//   decline: '4000 0000 0000 0002',
+//   expiry: 'Any future date',
+//   cvc: 'Any 3 digits'
+// };
 
 export default function PricingPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showTestInfo, setShowTestInfo] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
+  // const [showTestInfo, setShowTestInfo] = useState(false);
   const [testData, setTestData] = useState<TestData | null>(null);
-  const [copiedText, setCopiedText] = useState('');
+  // const [copiedText, setCopiedText] = useState('');
   const [subscription, setSubscription] = useState<{
     isActive: boolean;
     expiresAt: Date | null;
@@ -74,40 +74,40 @@ export default function PricingPage() {
     checkSubscription();
   }, [user]);
 
-  const handleProSubscription = async () => {
-    try {
-      setIsLoading(true);
-      const idToken = await user?.getIdToken();
-      const response = await fetch('/api/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`, // Add the Firebase ID token
-        },
-        body: JSON.stringify({
-          email: user?.email,
-        }),
-      });
+  // const handleProSubscription = async () => {
+  //   try {
+  //     // setIsLoading(true);
+  //     const idToken = await user?.getIdToken();
+  //     const response = await fetch('/api/create-subscription', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         Authorization: `Bearer ${idToken}`, // Add the Firebase ID token
+  //       },
+  //       body: JSON.stringify({
+  //         email: user?.email,
+  //       }),
+  //     });
 
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+  //     const data = await response.json();
+  //     if (data.error) throw new Error(data.error);
 
-      // Store test data and show test info modal
-      if (data.testData) {
-        setTestData(data.testData);
-        setShowTestInfo(true);
-        return;
-      }
+  //     // Store test data and show test info modal
+  //     if (data.testData) {
+  //       setTestData(data.testData);
+  //       setShowTestInfo(true);
+  //       return;
+  //     }
 
-      // Redirect to Stripe Checkout if no test data
-      window.location.href = data.sessionUrl;
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     // Redirect to Stripe Checkout if no test data
+  //     window.location.href = data.sessionUrl;
+  //   } catch (error) {
+  //     console.error('Error:', error);
+  //     alert('Something went wrong. Please try again.');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const formatExpiryDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -121,18 +121,18 @@ export default function PricingPage() {
     router.push('/signup');
   };
 
-  const proceedToPayment = () => {
-    setShowTestInfo(false);
-    if (testData) {
-      window.location.href = testData.sessionUrl;
-    }
-  };
+  // const proceedToPayment = () => {
+  //   setShowTestInfo(false);
+  //   if (testData) {
+  //     window.location.href = testData.sessionUrl;
+  //   }
+  // };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(label);
-    setTimeout(() => setCopiedText(''), 2000);
-  };
+  // const copyToClipboard = (text: string, label: string) => {
+  //   navigator.clipboard.writeText(text);
+  //   setCopiedText(label);
+  //   setTimeout(() => setCopiedText(''), 2000);
+  // };
 
   return (
     <div className="w-full py-20 lg:py-40 min-h-screen">

@@ -14,15 +14,15 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-type TestData = {
-  sessionUrl: string;
-  cardNumbers: {
-    success: string;
-    decline: string;
-  };
-  expiryDate: string;
-  cvc: string;
-};
+// type TestData = {
+//   sessionUrl: string;
+//   cardNumbers: {
+//     success: string;
+//     decline: string;
+//   };
+//   expiryDate: string;
+//   cvc: string;
+// };
 
 // Test card data
 // const TEST_CARDS = {
@@ -37,7 +37,7 @@ export default function PricingPage() {
   const router = useRouter();
   // const [isLoading, setIsLoading] = useState(false);
   // const [showTestInfo, setShowTestInfo] = useState(false);
-  const [testData, setTestData] = useState<TestData | null>(null);
+  // const [testData, setTestData] = useState<TestData | null>(null);
   // const [copiedText, setCopiedText] = useState('');
   const [subscription, setSubscription] = useState<{
     isActive: boolean;

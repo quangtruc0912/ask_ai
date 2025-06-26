@@ -9,48 +9,40 @@ export const Footer = () => {
       description: "",
     },
     {
-      title: "Product",
-      description: "Managing a small business today is already tough.",
+      title: "Features",
+      description: "See what the AI Wrapper Extension can do.",
       items: [
         {
-          title: "Reports",
-          href: "/reports",
+          title: "Screenshot Analysis",
+          href: "/features#screenshot",
         },
         {
-          title: "Statistics",
-          href: "/statistics",
+          title: "Writing & Replies",
+          href: "/features#writing",
         },
         {
-          title: "Dashboards",
-          href: "/dashboards",
+          title: "Conversation Grouping",
+          href: "/features#grouping",
         },
         {
-          title: "Recordings",
-          href: "/recordings",
+          title: "Prompt Generation",
+          href: "/features#prompt",
+        },
+        {
+          title: "Multi-Model Support",
+          href: "/features#models",
         },
       ],
     },
     {
-      title: "Company",
-      description: "Managing a small business today is already tough.",
-      items: [
-        {
-          title: "About us",
-          href: "/about",
-        },
-        {
-          title: "Fundraising",
-          href: "/fundraising",
-        },
-        {
-          title: "Investors",
-          href: "/investors",
-        },
-        {
-          title: "Contact us",
-          href: "/contact",
-        },
-      ],
+      title: "Pricing",
+      href: "/pricing",
+      description: "Free tier and unlimited with your API key.",
+    },
+    {
+      title: "Support",
+      href: "/support",
+      description: "Get help and learn more.",
     },
   ];
 
@@ -61,21 +53,21 @@ export const Footer = () => {
           <div className="flex gap-8 flex-col items-start">
             <div className="flex gap-2 flex-col">
               <h2 className="text-3xl md:text-5xl tracking-tighter max-w-xl font-regular text-left">
-                TWBlocks™
+                AI Wrapper Extension
               </h2>
               <p className="text-lg max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
-                Managing a small business today is already tough.
+                Bring powerful AI tools to your browser with our Chrome extension. Supports OpenAI, Anthropic, Gemini, and more.
               </p>
             </div>
             <div className="flex gap-20 flex-row">
               <div className="flex flex-col text-sm max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
-                <p>1 Tailwind Way</p>
-                <p>Menlo Park</p>
-                <p>CA 94025</p>
+                <p>1 AI Avenue</p>
+                <p>San Francisco</p>
+                <p>CA 94105</p>
               </div>
               <div className="flex flex-col text-sm max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
-                <Link href="/">Terms of service</Link>
-                <Link href="/">Privacy Policy</Link>
+                <Link href="/terms">Terms of Service</Link>
+                <Link href="/privacy">Privacy Policy</Link>
               </div>
             </div>
           </div>

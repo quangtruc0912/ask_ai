@@ -4,6 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Check, MoveRight, PhoneCall } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type TestData = {
   sessionUrl: string;
@@ -125,272 +135,172 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-20">
-      {/* Test Payment Info Modal */}
-      {showTestInfo && testData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Test Payment Information
-              </h3>
-              <button
-                onClick={() => setShowTestInfo(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
-                <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
-                  This is a test mode. No real charges will be made.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Test Card Numbers</h4>
-
-                {/* Success Card */}
-                <div className="relative group">
-                  <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                        Successful Payment
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(testData.cardNumbers.success, 'success')}
-                        className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
-                      >
-                        {copiedText === 'success' ? (
-                          <span className="text-sm">Copied!</span>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    <p className="font-mono text-lg text-green-800 dark:text-green-200">
-                      {testData.cardNumbers.success}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Decline Card */}
-                <div className="relative group">
-                  <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-red-800 dark:text-red-200">
-                        Declined Payment
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(testData.cardNumbers.decline, 'decline')}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
-                      >
-                        {copiedText === 'decline' ? (
-                          <span className="text-sm">Copied!</span>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    <p className="font-mono text-lg text-red-800 dark:text-red-200">
-                      {testData.cardNumbers.decline}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Other Test Data */}
-                <div className="mt-6 space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">Other Test Data</h5>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <p>
-                        <span className="font-medium">Expiry Date:</span>{' '}
-                        <span className="font-mono">{testData.expiryDate}</span>
-                      </p>
-                      <p>
-                        <span className="font-medium">CVC:</span>{' '}
-                        <span className="font-mono">{testData.cvc}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-4 mt-6">
-                <button
-                  onClick={proceedToPayment}
-                  className="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
-                >
-                  Continue to Payment
-                </button>
-              </div>
-            </div>
+    <div className="w-full py-20 lg:py-40 min-h-screen">
+      <div className="container mx-auto">
+        <div className="flex text-center justify-center items-center gap-4 flex-col">
+          <Badge>Pricing</Badge>
+          <div className="flex gap-2 flex-col">
+            <h2 className="text-3xl md:text-5xl tracking-tighter max-w-xl text-center font-regular">
+              Simple, Flexible Pricing for Everyone
+            </h2>
+            <p className="text-lg leading-relaxed tracking-tight text-muted-foreground max-w-xl text-center">
+              Use the extension for free with a limited number of requests, or connect your own LLM API key (OpenAI, Anthropic, Gemini, and more) for unlimited access.
+            </p>
           </div>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Upgrade to Ask AI Pro
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
-            The Smartest Way to Search, Learn, Create, & Succeed
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Free Tier */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <div className="flex flex-col h-full">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                Free
-              </h2>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900 dark:text-white">$0</span>
-                <span className="text-gray-600 dark:text-gray-300 ml-2">per month</span>
-              </div>
-              <div className="space-y-4 flex-grow">
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">Enhance your browsing experience</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">Summary your screenshot any website</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">Track & revisit your searches anytime</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">5 Pro Analysis</span>
-                </div>
-              </div>
-              {user ? (
-                <div className="mt-8 text-center">
-                  <button
-                    className="w-full bg-green-500 text-white font-semibold py-3 px-8 rounded-full transition duration-300 cursor-default"
-                  >
-                    Activated
-                  </button>
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    Next Payment: {subscription?.isActive && subscription.expiresAt ? formatExpiryDate(subscription.expiresAt) : 'N/A'}
+          <div className="grid pt-20 text-left grid-cols-1 lg:grid-cols-3 w-full gap-8">
+            <Card className="w-full rounded-md">
+              <CardHeader>
+                <CardTitle>
+                  <span className="flex flex-row gap-4 items-center font-normal">
+                    Free Tier
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Try all features with a limited number of free requests every month.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-8 justify-start">
+                  <p className="flex flex-row  items-center gap-2 text-xl">
+                    <span className="text-4xl">$0</span>
+                    <span className="text-sm text-muted-foreground"> / month</span>
                   </p>
-                </div>
-              ) : (
-                <button
-                  onClick={handleFreeSignUp}
-                  className="mt-8 w-full bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-semibold py-3 px-8 rounded-full transition duration-300"
-                >
-                  Sign up
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Pro Tier */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-purple-500">
-            <div className="flex flex-col h-full">
-              <h2 className="text-2xl font-bold mb-4 flex items-center">
-                <span className="text-gray-900 dark:text-white">Ask AI</span>
-                <span className="text-purple-500 ml-2">Pro</span>
-              </h2>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900 dark:text-white">$5</span>
-                <span className="text-gray-600 dark:text-gray-300 ml-2">per month</span>
-              </div>
-              <div className="space-y-4 flex-grow">
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">Everything in Free</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">Access the most advanced AI reasoning</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-300">300 Pro Analysis</span>
-                </div>
-              </div>
-              {user ? (
-                subscription?.isActive ? (
-                  <div className="mt-8 text-center">
-                    <button
-                      className="w-full bg-green-500 text-white font-semibold py-3 px-8 rounded-full transition duration-300 cursor-default"
-                    >
-                      Activated
-                    </button>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Expires: {subscription.expiresAt ? formatExpiryDate(subscription.expiresAt) : 'N/A'}
-                    </p>
+                  <div className="flex flex-col gap-4 justify-start">
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>All features included</p>
+                        <p className="text-muted-foreground text-sm">
+                          Analyze screenshots, generate replies, group conversations, and more.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>Limited free requests</p>
+                        <p className="text-muted-foreground text-sm">
+                          Enjoy a set number of free uses every month.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <button
-                    onClick={handleProSubscription}
-                    disabled={isLoading}
-                    className="mt-8 w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-8 rounded-full transition duration-300 disabled:opacity-50"
-                  >
-                    {isLoading ? 'Processing...' : 'Subscribe Now'}
-                  </button>
-                )
-              ) : (
-                <Link
-                  href="/signup"
-                  className="mt-8 w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-8 rounded-full transition duration-300 text-center"
-                >
-                  Sign up
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Test Card Information */}
-        <div className="mt-8 max-w-md mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-purple-200 dark:border-purple-800">
-          <div className="text-center mb-4">
-            <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
-              Test Mode
-            </span>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Success Card:</p>
-              <p className="font-mono text-green-600 dark:text-green-400">{TEST_CARDS.success}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Decline Card:</p>
-              <p className="font-mono text-red-600 dark:text-red-400">{TEST_CARDS.decline}</p>
-            </div>
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Use <span className="font-mono">{TEST_CARDS.expiry}</span> for expiry and <span className="font-mono">{TEST_CARDS.cvc}</span> for CVC
-              </p>
-            </div>
+                  {user ? (
+                    <div className="mt-8 text-center">
+                      <Button className="w-full" variant="outline" disabled>
+                        Activated
+                      </Button>
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        Next Payment: {subscription?.isActive && subscription.expiresAt ? formatExpiryDate(subscription.expiresAt) : 'N/A'}
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleFreeSignUp}
+                      className="mt-8 w-full"
+                      variant="outline"
+                    >
+                      Get Started Free
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="w-full shadow-2xl rounded-md">
+              <CardHeader>
+                <CardTitle>
+                  <span className="flex flex-row gap-4 items-center font-normal">
+                    Unlimited (BYO API Key)
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Connect your own LLM API key (OpenAI, Anthropic, Gemini, etc.) for unlimited access to all features.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-8 justify-start">
+                  <p className="flex flex-row  items-center gap-2 text-xl">
+                    <span className="text-4xl">$0</span>
+                    <span className="text-sm text-muted-foreground"> (with your LLM API key)</span>
+                  </p>
+                  <div className="flex flex-col gap-4 justify-start">
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>No limits when you use your own LLM API key.</p>
+                        <p className="text-muted-foreground text-sm">
+                          Full access to screenshot analysis, writing, grouping, and more.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>All features included</p>
+                        <p className="text-muted-foreground text-sm">
+                          Full access to screenshot analysis, writing, grouping, and more.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Button className="gap-4">
+                    Connect API Key <MoveRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="w-full rounded-md">
+              <CardHeader>
+                <CardTitle>
+                  <span className="flex flex-row gap-4 items-center font-normal">
+                    Enterprise
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Need more? Contact us for custom solutions and support for your team.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-8 justify-start">
+                  <p className="flex flex-row  items-center gap-2 text-xl">
+                    <span className="text-4xl">Contact Us</span>
+                    <span className="text-sm text-muted-foreground">&nbsp;</span>
+                  </p>
+                  <div className="flex flex-col gap-4 justify-start">
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>Team management</p>
+                        <p className="text-muted-foreground text-sm">
+                          Manage users and permissions at scale.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>Dedicated support</p>
+                        <p className="text-muted-foreground text-sm">
+                          Priority help and custom solutions.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-4">
+                        <Check className="w-4 h-4 mt-2 text-primary" />
+                      <div className="flex flex-col">
+                        <p>Custom integrations</p>
+                        <p className="text-muted-foreground text-sm">
+                          Integrate with your internal tools and workflows.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="gap-4">
+                    Contact Sales <PhoneCall className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

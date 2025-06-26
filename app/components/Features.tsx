@@ -14,28 +14,32 @@ export const Features = () => (
             <div className="grid grid-cols-1 lg:grid-cols-2 justify-end items-end  gap-10">
                 <div className="flex gap-4 flex-col items-start">
                     <div>
-                        <Badge>Platform</Badge>
+                        <Badge>Extension Features</Badge>
                     </div>
                     <div className="flex gap-2 flex-col">
                         <h2 className="text-xl md:text-3xl lg:text-5xl tracking-tighter lg:max-w-xl font-regular text-left">
-                            This is the start of something new
+                            Unlock the Power of AI in Your Browser
                         </h2>
                         <p className="text-lg  max-w-xl lg:max-w-sm leading-relaxed tracking-tight text-muted-foreground  text-left">
-                            Managing a small business today is already tough. Avoid further
-                            complications by ditching outdated, tedious trade methods. Our
-                            goal is to streamline SMB trade, making it easier and faster than
-                            ever.
+                            Our Chrome extension brings advanced AI tools to your daily workflow: analyze cropped screenshots, generate or reply to messages, group conversations by topic, create effective prompts, and understand the purpose of LLMs. Use your own LLM API key (OpenAI, Anthropic, Gemini, and more) for unlimited access, or enjoy a free tier with limited requests.
                         </p>
                     </div>
                 </div>
                 <div className="w-full max-w-full px-6">
                     <Carousel>
                         <CarouselContent>
-                            {Array.from({ length: 5 }).map((_, index) => (
+                            {[
+                                'Analyze cropped screenshots instantly',
+                                'Generate and reply to messages with AI',
+                                'Group conversations by topic automatically',
+                                'Prompt generation and suggestions',
+                                'Understand LLM purpose and usage',
+                                'Use your own LLM API key (OpenAI, Anthropic, Gemini, etc.) or enjoy free requests'
+                            ].map((feature, index) => (
                                 <CarouselItem key={index}>
                                     <div className="flex rounded-md aspect-video bg-muted items-center justify-center p-6">
                                         <span className="text-sm">
-                                            Platform Screenshot {index + 1}
+                                            {feature}
                                         </span>
                                     </div>
                                 </CarouselItem>

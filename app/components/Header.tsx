@@ -1,68 +1,3 @@
-// 'use client';
-
-// import Link from 'next/link';
-// import { useAuth } from '../context/AuthContext';
-// import { signOut } from 'firebase/auth';
-// import { auth } from '../firebase/config';
-// import { useRouter } from 'next/navigation';
-
-// export default function Header() {
-//   const { user } = useAuth();
-//   const router = useRouter();
-
-//   const handleSignOut = async () => {
-//     try {
-//       await signOut(auth);
-//       router.push('/');
-//     } catch (error) {
-//       console.error('Error signing out:', error);
-//     }
-//   };
-
-//   return (
-//     <header className="bg-white dark:bg-gray-800 shadow-sm">
-//       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-//         <div className="flex items-center">
-//           <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
-//             Ask AI
-//           </Link>
-//         </div>
-
-//         <div className="flex items-center space-x-4">
-//           {user ? (
-//             <>
-//               <span className="text-gray-600 dark:text-gray-300">
-//                 {user.email}
-//               </span>
-//               <button
-//                 onClick={handleSignOut}
-//                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-//               >
-//                 Sign out
-//               </button>
-//             </>
-//           ) : (
-//             <>
-//               <Link
-//                 href="/login"
-//                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-//               >
-//                 Sign in
-//               </Link>
-//               <Link
-//                 href="/signup"
-//                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-//               >
-//                 Sign up
-//               </Link>
-//             </>
-//           )}
-//         </div>
-//       </nav>
-//     </header>
-//   );
-// } 
-
 "use client";
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
@@ -79,7 +14,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { Menu, MoveRight, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback, MouseEvent } from "react";
 
 export const Header = () => {
   const navigationItems = [
@@ -89,32 +24,58 @@ export const Header = () => {
       description: "",
     },
     {
-      title: "Product",
-      description: "Managing a small business today is already tough.",
+      title: "Features",
+      description: "See what the AI Wrapper Extension can do.",
       items: [
         {
-          title: "Reports",
-          href: "/reports",
+          title: "Screenshot Analysis",
+          href: "/features#screenshot",
         },
         {
-          title: "Statistics",
-          href: "/statistics",
+          title: "Writing & Replies",
+          href: "/features#writing",
         },
         {
-          title: "Dashboards",
-          href: "/dashboards",
+          title: "Conversation Grouping",
+          href: "/features#grouping",
         },
         {
-          title: "Recordings",
-          href: "/recordings",
+          title: "Prompt Generation",
+          href: "/features#prompt",
+        },
+        {
+          title: "Multi-Model Support",
+          href: "/features#models",
         },
       ],
+    },
+    {
+      title: "Pricing",
+      href: "/pricing",
+      description: "Free tier and unlimited with your API key.",
+    },
+    {
+      title: "Support",
+      href: "/support",
+      description: "Get help and learn more.",
     },
   ];
 
   const [isOpen, setOpen] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+
+  // Helper to handle smooth scroll for hash links
+  const handleNavClick = useCallback((e: MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const id = href.replace("#", "");
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -133,11 +94,21 @@ export const Header = () => {
               {navigationItems.map((item) => (
                 <NavigationMenuItem key={item.title}>
                   {item.href ? (
-                    <>
-                      <NavigationMenuLink>
-                        <Button variant="ghost">{item.title}</Button>
-                      </NavigationMenuLink>
-                    </>
+                    <NavigationMenuLink asChild>
+                      {item.href.startsWith("#") ? (
+                        <a
+                          href={item.href}
+                          className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                          onClick={(e) => handleNavClick(e, item.href)}
+                        >
+                          {item.title}
+                        </a>
+                      ) : (
+                        <Button variant="ghost" asChild>
+                          <a href={item.href}>{item.title}</a>
+                        </Button>
+                      )}
+                    </NavigationMenuLink>
                   ) : (
                     <>
                       <NavigationMenuTrigger className="font-medium text-sm">
@@ -158,13 +129,25 @@ export const Header = () => {
                           </div>
                           <div className="flex flex-col text-sm h-full justify-end">
                             {item.items?.map((subItem) => (
-                              <NavigationMenuLink
-                                href={subItem.href}
-                                key={subItem.title}
-                                className="flex flex-row justify-between items-center hover:bg-muted py-2 px-4 rounded"
-                              >
-                                <span>{subItem.title}</span>
-                                <MoveRight className="w-4 h-4 text-muted-foreground" />
+                              <NavigationMenuLink asChild key={subItem.title}>
+                                {subItem.href.startsWith("#") ? (
+                                  <a
+                                    href={subItem.href}
+                                    className="flex flex-row justify-between items-center hover:bg-muted py-2 px-4 rounded"
+                                    onClick={(e) => handleNavClick(e, subItem.href)}
+                                  >
+                                    <span>{subItem.title}</span>
+                                    <MoveRight className="w-4 h-4 text-muted-foreground" />
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={subItem.href}
+                                    className="flex flex-row justify-between items-center hover:bg-muted py-2 px-4 rounded"
+                                  >
+                                    <span>{subItem.title}</span>
+                                    <MoveRight className="w-4 h-4 text-muted-foreground" />
+                                  </a>
+                                )}
                               </NavigationMenuLink>
                             ))}
                           </div>
@@ -178,13 +161,13 @@ export const Header = () => {
           </NavigationMenu>
         </div>
         <div className="flex lg:justify-center">
-          <p className="font-semibold">TWBlocks</p>
+          <p className="font-semibold">AI Wrapper Extension</p>
         </div>
         <div className="flex justify-end w-full gap-4">
           {!user ? (
             <>
               <div className="border-r hidden md:inline"></div>
-              <Button variant="outline"  ><Link href="/login">Sign in</Link></Button>
+              <Button variant="outline"  ><Link href="/login">Start Chatting</Link></Button>
             </>
           ) : (
             <>
@@ -204,28 +187,53 @@ export const Header = () => {
                 <div key={item.title}>
                   <div className="flex flex-col gap-2">
                     {item.href ? (
-                      <Link
-                        href={item.href}
-                        className="flex justify-between items-center"
-                      >
-                        <span className="text-lg">{item.title}</span>
-                        <MoveRight className="w-4 h-4 stroke-1 text-muted-foreground" />
-                      </Link>
+                      item.href.startsWith("#") ? (
+                        <a
+                          href={item.href}
+                          className="flex justify-between items-center"
+                          onClick={(e) => handleNavClick(e, item.href)}
+                        >
+                          <span className="text-lg">{item.title}</span>
+                          <MoveRight className="w-4 h-4 stroke-1 text-muted-foreground" />
+                        </a>
+                      ) : (
+                        <a
+                          href={item.href}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-lg">{item.title}</span>
+                          <MoveRight className="w-4 h-4 stroke-1 text-muted-foreground" />
+                        </a>
+                      )
                     ) : (
                       <p className="text-lg">{item.title}</p>
                     )}
                     {item.items &&
                       item.items.map((subItem) => (
-                        <Link
-                          key={subItem.title}
-                          href={subItem.href}
-                          className="flex justify-between items-center"
-                        >
-                          <span className="text-muted-foreground">
-                            {subItem.title}
-                          </span>
-                          <MoveRight className="w-4 h-4 stroke-1" />
-                        </Link>
+                        subItem.href.startsWith("#") ? (
+                          <a
+                            key={subItem.title}
+                            href={subItem.href}
+                            className="flex justify-between items-center"
+                            onClick={(e) => handleNavClick(e, subItem.href)}
+                          >
+                            <span className="text-muted-foreground">
+                              {subItem.title}
+                            </span>
+                            <MoveRight className="w-4 h-4 stroke-1" />
+                          </a>
+                        ) : (
+                          <a
+                            key={subItem.title}
+                            href={subItem.href}
+                            className="flex justify-between items-center"
+                          >
+                            <span className="text-muted-foreground">
+                              {subItem.title}
+                            </span>
+                            <MoveRight className="w-4 h-4 stroke-1" />
+                          </a>
+                        )
                       ))}
                   </div>
                 </div>

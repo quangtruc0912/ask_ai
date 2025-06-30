@@ -136,7 +136,9 @@ export default function PricingPage() {
   return (
     <div className="w-full py-20 lg:py-40 min-h-screen">
       <div className="container mx-auto">
+
         <div className="flex text-center justify-center items-center gap-4 flex-col">
+        <img src="/logo.png" alt="Askits Logo" className="h-32 w-auto mb-4" />
           <Badge>Pricing</Badge>
           <div className="flex gap-2 flex-col">
             <h2 className="text-3xl md:text-5xl tracking-tighter max-w-xl text-center font-regular">

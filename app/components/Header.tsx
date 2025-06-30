@@ -25,7 +25,7 @@ export const Header = () => {
     },
     {
       title: "Features",
-      description: "See what the AI Wrapper Extension can do.",
+      description: "See what the AskIts Extension can do.",
       items: [
         {
           title: "Screenshot Analysis",
@@ -161,7 +161,7 @@ export const Header = () => {
           </NavigationMenu>
         </div>
         <div className="flex lg:justify-center">
-          <p className="font-semibold">AI Wrapper Extension</p>
+          <p className="font-semibold">AskIts Extension</p>
         </div>
         <div className="flex justify-end w-full gap-4">
           {!user ? (

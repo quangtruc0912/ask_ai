@@ -29,9 +29,11 @@ export const Top = () => {
             <div className="container mx-auto">
                 <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
 
+                    <img src="/logo.png" alt="Askits Logo" className="h-32 w-auto mb-4" />
+
                     <div className="flex gap-4 flex-col">
                         <h1 className="text-5xl md:text-7xl max-w-2xl tracking-tighter text-center font-regular">
-                            <span className="text-spektr-cyan-50">AI Wrapper Chrome Extension:</span>
+                            <span className="text-spektr-cyan-50">AskIts Extension:</span>
                             <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
                                 &nbsp;
                                 {titles.map((title, index) => (

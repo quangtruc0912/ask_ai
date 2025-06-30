@@ -10,7 +10,7 @@ export const Footer = () => {
     },
     {
       title: "Features",
-      description: "See what the AI Wrapper Extension can do.",
+      description: "See what the AskIts Extension can do.",
       items: [
         {
           title: "Screenshot Analysis",
@@ -53,7 +53,7 @@ export const Footer = () => {
           <div className="flex gap-8 flex-col items-start">
             <div className="flex gap-2 flex-col">
               <h2 className="text-3xl md:text-5xl tracking-tighter max-w-xl font-regular text-left">
-                AI Wrapper Extension
+                AskIts Extension
               </h2>
               <p className="text-lg max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
                 Bring powerful AI tools to your browser with our Chrome extension. Supports OpenAI, Anthropic, Gemini, and more.

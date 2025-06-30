@@ -161,7 +161,7 @@ export const Header = () => {
           </NavigationMenu>
         </div>
         <div className="flex lg:justify-center">
-          <p className="font-semibold">AskIts Extension</p>
+          {/* <p className="font-semibold">AskIts Extension</p> */}
         </div>
         <div className="flex justify-end w-full gap-4">
           {!user ? (

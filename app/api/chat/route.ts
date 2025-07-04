@@ -1,63 +1,44 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '../../../lib/firebase';
-import { isSameMonth, getUserLimits, getNextMonthFirstDay, formatDateToISO } from '../../../lib/config';
-import { getSubscriptionStatus } from '../../utils/subscription';
+import { isSameMonth, getNextMonthFirstDay, formatDateToISO } from '../../../lib/config';
 import { getModelConfig } from '../../../lib/models';
 import { generateResponse, GenericMessage } from '../../../lib/ai-providers';
+import { getClientIp } from '../../utils/request';
 
 export interface ConversationMessage {
-  role: 'user' | 'assistant';
-  content: string;
+  sender: 'user' | 'assistant';
+  text: string;
 }
 
 export async function POST(request: Request) {
   try {
-    // Get the auth token from headers
+    // Extract IP address
+    const ip = getClientIp(request);
+    console.log('ip', ip)
+    // Try to get email from x-auth-token if present
+    let email: string | null = null;
+    let decodedToken: { email?: string } | null = null;
     const authHeader = request.headers.get('x-auth-token');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
-        {
-          message: 'No token provided',
-          status: 401,
-          remainingRequests: 0
-        },
-        { status: 401 }
-      );
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split('Bearer ')[1];
+      try {
+        decodedToken = await adminAuth.verifyIdToken(token);
+        email = decodedToken.email || null;
+      } catch (error) {
+        // Invalid token, ignore and treat as anonymous
+        email = null;
+      }
     }
 
-    // Verify the token
-    const token = authHeader.split('Bearer ')[1];
-    let decodedToken;
-    try {
-      decodedToken = await adminAuth.verifyIdToken(token);
-      console.log('Authenticated user:', decodedToken.uid);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return NextResponse.json(
-        {
-          message: 'Invalid token',
-          status: 401,
-          remainingRequests: 0
-        },
-        { status: 401 }
-      );
+    // Determine Firebase key and request limit
+    let key = `requests/${ip}`;
+    let requestLimit = 10;
+    if (email) {
+      key = `requests/${ip}_${email}`;
+      requestLimit = 30;
     }
 
-    if (!decodedToken.email) {
-      return NextResponse.json(
-        {
-          message: 'User email not found',
-          status: 400,
-          remainingRequests: 0
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check subscription status
-    const subscriptionStatus = await getSubscriptionStatus(decodedToken.email);
-    const { requestLimit } = getUserLimits(subscriptionStatus.isActive);
-
+    // Parse request body
     const { imageBase64, chatMessage, prompt, conversationHistory, modelId } = await request.json();
 
     if (!imageBase64 && !chatMessage) {
@@ -96,45 +77,44 @@ export async function POST(request: Request) {
       );
     }
 
-    // Only check and update request limits if image is provided
-    let requestCount = 0;
-    let remainingRequests = 0;
-    if (imageBase64) {
-      const userRef = adminDb.ref(`users/${decodedToken.uid}`);
-      const userSnapshot = await userRef.once('value');
-      const userData = userSnapshot.val() || { requestCount: 0, lastRequest: null };
+    // Check and update request limits
+    const reqRef = adminDb.ref(key);
+    const reqSnapshot = await reqRef.once('value');
+    const reqData = reqSnapshot.val() || { requestCount: 0, lastRequest: null, ip, email };
 
-      const now = new Date();
-      const lastRequest = userData.lastRequest ? new Date(userData.lastRequest) : null;
+    const now = new Date();
+    const lastRequest = reqData.lastRequest ? new Date(reqData.lastRequest) : null;
 
-      // Reset request count if it's a new month
-      if (!lastRequest || !isSameMonth(now, lastRequest)) {
-        userData.requestCount = 0;
-      }
-
-      // Check if user has exceeded monthly limit
-      if (userData.requestCount >= requestLimit) {
-        return NextResponse.json(
-          {
-            message: subscriptionStatus.isActive ? 'Pro monthly request limit reached' : 'Free tier request limit reached',
-            status: 429,
-            remainingRequests: 0,
-            limit: requestLimit,
-            resetDate: formatDateToISO(getNextMonthFirstDay(now)),
-            isProUser: subscriptionStatus.isActive
-          },
-          { status: 429 }
-        );
-      }
-
-      // Update request count in database
-      requestCount = userData.requestCount + 1;
-      remainingRequests = requestLimit - requestCount;
-      await userRef.update({
-        requestCount,
-        lastRequest: formatDateToISO(now),
-      });
+    // Reset request count if it's a new month
+    if (!lastRequest || !isSameMonth(now, lastRequest)) {
+      reqData.requestCount = 0;
     }
+
+    // Check if user has exceeded monthly limit
+    if (reqData.requestCount >= requestLimit) {
+      return NextResponse.json(
+        {
+          message: email ? 'Monthly request limit reached (IP+email)' : 'Monthly request limit reached (IP only)',
+          status: 429,
+          remainingRequests: 0,
+          limit: requestLimit,
+          resetDate: formatDateToISO(getNextMonthFirstDay(now)),
+          ip,
+          email
+        },
+        { status: 429 }
+      );
+    }
+
+    // Update request count in database
+    const requestCount = reqData.requestCount + 1;
+    const remainingRequests = requestLimit - requestCount;
+    await reqRef.update({
+      requestCount,
+      lastRequest: formatDateToISO(now),
+      ip,
+      email
+    });
 
     // Prepare messages for AI
     const messages: GenericMessage[] = [
@@ -148,8 +128,8 @@ export async function POST(request: Request) {
     if (conversationHistory && conversationHistory.length > 0) {
       conversationHistory.forEach((msg: ConversationMessage) => {
         messages.push({
-          role: msg.role,
-          content: msg.content,
+          role: msg.sender,
+          content: msg.text,
         });
       });
     }
@@ -161,7 +141,6 @@ export async function POST(request: Request) {
         content: chatMessage ? chatMessage : 'Analyze the image and answer any question it contains.',
         imageBase64: imageBase64
       });
-
     } else if (chatMessage) {
       // If only text question is provided
       messages.push({
@@ -179,11 +158,10 @@ export async function POST(request: Request) {
       response: response.content,
       usage: response.usage,
       user: {
-        id: decodedToken.uid,
-        email: decodedToken.email,
+        ip,
+        email,
         requestCount,
         remainingRequests,
-        isProUser: subscriptionStatus.isActive,
         requestLimit
       }
     });

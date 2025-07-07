@@ -38,11 +38,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Failed to fetch from Google Search API', status: 500 }, { status: 500 });
     }
     const data = await googleRes.json();
-    const items = Array.isArray(data.items)
-      ? data.items.map((item: any) => ({
-          title: item.title,
-          url: item.link,
-          snippet: item.snippet,
+
+    // Define a type for Google search result items
+    type GoogleSearchItem = {
+      title?: string;
+      link?: string;
+      snippet?: string;
+    };
+    
+    const items = Array.isArray(data?.items)
+      ? (data.items as GoogleSearchItem[]).map((item) => ({
+          title: item.title ?? '',
+          url: item.link ?? '',
+          snippet: item.snippet ?? '',
         }))
       : [];
 

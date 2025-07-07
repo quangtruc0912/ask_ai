@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     try {
       decodedToken = await adminAuth.verifyIdToken(token);
     } catch (error) {
+      console.error('Error processing request:', error);
       return NextResponse.json({ message: 'Invalid token', status: 401 }, { status: 401 });
     }
     if (!decodedToken.email) {
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       link?: string;
       snippet?: string;
     };
-    
+
     const items = Array.isArray(data?.items)
       ? (data.items as GoogleSearchItem[]).map((item) => ({
           title: item.title ?? '',

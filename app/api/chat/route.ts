@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       } catch (error) {
         // Invalid token, ignore and treat as anonymous
         email = null;
+        console.error('Error processing request:', error);
       }
     }
 

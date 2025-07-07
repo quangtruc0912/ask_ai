@@ -19,6 +19,7 @@ export async function POST(request: Request) {
         email = decodedToken.email || null;
       } catch (error) {
         email = null;
+        console.error('Error processing request:', error);
       }
     }
     let key = `requests/${ip}`;

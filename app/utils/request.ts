@@ -59,8 +59,8 @@ function generateSearchQueryFromContext(context: string) {
   const doc = nlp(context);
 
   // Step 1: Extract key parts of speech
-  let nouns = doc.nouns().out('array');
-  let verbs = doc.verbs().out('array');
+  const nouns = doc.nouns().out('array');
+  const verbs = doc.verbs().out('array');
 
   // Step 2: Lowercase, remove duplicates and common words
   const filter = (word: string) =>
@@ -115,6 +115,7 @@ export async function enhanceConversationWithSearch(
       }
     } catch (err) {
       // Optionally log or handle search errors
+      console.error('Error processing enhanceConversationWithSearch:', err);
       messages.push({
         role: 'system',
         content: 'Web search failed or is unavailable.',

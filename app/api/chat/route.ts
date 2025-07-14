@@ -133,16 +133,7 @@ export async function POST(request: Request) {
       }
     ];
 
-    // Add web search results if enabled and chatMessage is present
-    if (enhancements?.allowApiSearch && chatMessage) {
-      const searchMessages = await enhanceConversationWithSearch(chatMessage, enhancements);
-      searchMessages.forEach((msg) => {
-        messages.push({
-          role: msg.role as 'system' | 'user' | 'assistant',
-          content: msg.content,
-        });
-      });
-    }
+
 
     // Add conversation history if provided
     if (conversationHistory && conversationHistory.length > 0) {
@@ -166,6 +157,17 @@ export async function POST(request: Request) {
       messages.push({
         role: 'user',
         content: chatMessage,
+      });
+    }
+
+    // Add web search results if enabled and chatMessage is present
+    if (enhancements?.allowApiSearch && chatMessage) {
+      const searchMessages = await enhanceConversationWithSearch(chatMessage, enhancements);
+      searchMessages.forEach((msg) => {
+        messages.push({
+          role: msg.role as 'system' | 'user' | 'assistant',
+          content: msg.content,
+        });
       });
     }
 

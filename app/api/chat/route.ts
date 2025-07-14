@@ -4,6 +4,7 @@ import { isSameMonth, getNextMonthFirstDay, formatDateToISO } from '../../../lib
 import { getModelConfig } from '../../../lib/models';
 import { generateResponse, GenericMessage } from '../../../lib/ai-providers';
 import { getClientIp } from '../../utils/request';
+import { enhanceConversationWithSearch, RequestEnhancements } from '../../utils/request';
 
 export interface ConversationMessage {
   sender: 'user' | 'assistant';
@@ -40,7 +41,14 @@ export async function POST(request: Request) {
     }
 
     // Parse request body
-    const { imageBase64, chatMessage, prompt, conversationHistory, modelId } = await request.json();
+    const { imageBase64, chatMessage, prompt, conversationHistory, modelId, enhancements }: {
+      imageBase64?: string;
+      chatMessage?: string;
+      prompt: string;
+      conversationHistory?: ConversationMessage[];
+      modelId?: string;
+      enhancements?: RequestEnhancements;
+    } = await request.json();
 
     if (!imageBase64 && !chatMessage) {
       return NextResponse.json(
@@ -124,6 +132,17 @@ export async function POST(request: Request) {
         content: prompt,
       }
     ];
+
+    // Add web search results if enabled and chatMessage is present
+    if (enhancements?.allowApiSearch && chatMessage) {
+      const searchMessages = await enhanceConversationWithSearch(chatMessage, enhancements);
+      searchMessages.forEach((msg) => {
+        messages.push({
+          role: msg.role as 'system' | 'user' | 'assistant',
+          content: msg.content,
+        });
+      });
+    }
 
     // Add conversation history if provided
     if (conversationHistory && conversationHistory.length > 0) {

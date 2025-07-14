@@ -8,8 +8,8 @@ import { Footer } from "./components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Ask AI",
-  description: "AI Image Analysis Platform",
+  title: "Askits Extension",
+  description: "Askits Extension",
 };
 
 export default function RootLayout({

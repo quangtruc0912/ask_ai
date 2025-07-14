@@ -17,6 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cohere-ai": "^7.17.1",
+    "compromise": "^14.14.4",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.6.0",
     "firebase-admin": "^13.3.0",

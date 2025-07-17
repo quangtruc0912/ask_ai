@@ -7,6 +7,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
+import Image from "next/image";
 
 export const Features = () => (
     <div className="w-full py-20 lg:py-40">
@@ -29,17 +30,38 @@ export const Features = () => (
                     <Carousel>
                         <CarouselContent>
                             {[
-                                'Analyze cropped screenshots instantly',
-                                'Generate and reply to messages with AI',
-                                'Group conversations by topic automatically',
-                                'Prompt generation and suggestions',
-                                'Understand LLM purpose and usage',
-                                'Use your own LLM API key (OpenAI, Anthropic, Gemini, etc.) or enjoy free requests'
+                                {
+                                    src: "/features/1.png",
+                                    alt: "Organizes user conversation",
+                                    caption: "Organizes user conversation"
+                                },
+                                {
+                                    src: "/features/2.png",
+                                    alt: "Enhances responses by integrating tools",
+                                    caption: "Enhances responses by integrating live web search results"
+                                },
+                                {
+                                    src: "/features/3.png",
+                                    alt: "Provides a customizable library of prompts for different use cases",
+                                    caption: "Provides a customizable library of prompts for different use cases"
+                                },
+                                {
+                                    src: "/features/4.png",
+                                    alt: "Enables users to integrate their own API keys for chat access or use monthly free quota",
+                                    caption: "Enables users to integrate their own API keys for chat access use monthly free quota"
+                                }
                             ].map((feature, index) => (
                                 <CarouselItem key={index}>
-                                    <div className="flex rounded-md aspect-video bg-muted items-center justify-center p-6">
-                                        <span className="text-sm">
-                                            {feature}
+                                    <div className="flex flex-col rounded-md aspect-video bg-muted items-center justify-center p-6">
+                                        <Image
+                                            src={feature.src}
+                                            alt={feature.alt}
+                                            width={640}
+                                            height={360}
+                                            className="rounded mb-4 object-contain w-[640px] h-[360px]"
+                                        />
+                                        <span className="text-sm text-center text-primary">
+                                            {feature.caption}
                                         </span>
                                     </div>
                                 </CarouselItem>

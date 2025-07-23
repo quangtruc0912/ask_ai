@@ -63,5 +63,6 @@ export const config = {
     '/api/check-subscription',
     '/api/create-subscription',
     '/api/write',
+    '/api/web-analysis',
   ],
 };

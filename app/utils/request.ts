@@ -99,26 +99,43 @@ export type RequestEnhancements = {
 export async function enhanceConversationWithSearch(
   context: string,
   enhancements?: RequestEnhancements
-): Promise<Array<{ role: string; content: string }>> {
-  const messages: Array<{ role: string; content: string }> = [];
+): Promise<Array<{ role: string; content: string; sources?: Array<{ title: string; url: string; snippet: string }> }>> {
+  const messages: Array<{
+    role: string;
+    content: string;
+    sources?: Array<{ title: string; url: string; snippet: string }>;
+  }> = [];
   if (enhancements?.allowApiSearch) {
     try {
       const searchResults = await googleCustomSearch(context);
       if (searchResults.length > 0) {
+        // Format search results with clear source citations
         const searchSummary = searchResults
-          .map((item, idx) => `${idx + 1}. ${item.title}\n${item.url}\n${item.snippet}`)
+          .map((item, idx) => `[${idx + 1}] **${item.title}**\n📄 Source: ${item.url}\n📝 ${item.snippet}`)
           .join('\n\n');
+
         messages.push({
           role: 'system',
-          content: `Web search results for context:\n\n${searchSummary}`,
+          content: `📡 **Live Search Results Found**
+
+I have searched the web for current information about "${context}". Please use these results to provide an accurate and up-to-date answer. 
+
+**IMPORTANT INSTRUCTIONS:**
+1. Provide a comprehensive answer based on the search results
+2. Do NOT include source URLs or citations in your response
+3. Keep your response clean and focused on the information
+4. If the search results don't contain relevant information, mention this clearly
+
+**Search Results:**\n\n${searchSummary}`,
+          sources: searchResults,
         });
       }
     } catch (err) {
-      // Optionally log or handle search errors
-      console.error('Error processing enhanceConversationWithSearch:', err);
+      console.error('Search enhancement error:', err);
       messages.push({
         role: 'system',
-        content: 'Web search failed or is unavailable.',
+        content:
+          '⚠️ Web search failed or is unavailable. Please answer based on your training data and mention that live information is not available.',
       });
     }
   }

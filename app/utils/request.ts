@@ -1,4 +1,22 @@
 import nlp from 'compromise';
+
+// Utility to sanitize strings for Firebase paths (remove invalid characters)
+export function sanitizeForFirebasePath(value: string | null): string | null {
+  if (!value) return null;
+  return value.replace(/[.#$[\]:@]/g, '_');
+}
+
+// Utility to create Firebase key with sanitized IP and email
+export function createFirebaseKey(ip: string, email: string | null): string {
+  const sanitizedIp = sanitizeForFirebasePath(ip) || 'unknown';
+  const sanitizedEmail = sanitizeForFirebasePath(email);
+  
+  if (sanitizedEmail) {
+    return `requests/${sanitizedIp}_${sanitizedEmail}`;
+  }
+  return `requests/${sanitizedIp}`;
+}
+
 // Utility to extract the client IP address from a Next.js API request
 export function getClientIp(request: Request): string {
   const xff = request.headers.get('x-forwarded-for');

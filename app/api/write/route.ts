@@ -4,7 +4,7 @@ import { isSameMonth, getNextMonthFirstDay, formatDateToISO } from '../../../lib
 // import { getSubscriptionStatus } from '../../utils/subscription';
 import { getModelConfig } from '../../../lib/models';
 import { generateResponse, GenericMessage } from '../../../lib/ai-providers';
-import { getClientIp } from '../../utils/request';
+import { getClientIp, sanitizeForFirebasePath, createFirebaseKey } from '../../utils/request';
 
 export async function POST(request: Request) {
   try {
@@ -22,12 +22,17 @@ export async function POST(request: Request) {
         console.error('Error processing request:', error);
       }
     }
-    let key = `requests/${ip}`;
+    // Sanitize IP address and email for Firebase key (remove invalid characters)
+    const sanitizedIp = sanitizeForFirebasePath(ip) || 'unknown';
+    const sanitizedEmail = sanitizeForFirebasePath(email);
+
+    // Determine Firebase key and request limit
+    const key = createFirebaseKey(ip, email);
     let requestLimit = 10;
-    if (email) {
-      key = `requests/${ip}_${email}`;
+    if (sanitizedEmail) {
       requestLimit = 30;
     }
+
     const { content, prompt, modelId } = await request.json();
 
     if (!content) {
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
 
     const reqRef = adminDb.ref(key);
     const reqSnapshot = await reqRef.once('value');
-    const reqData = reqSnapshot.val() || { requestCount: 0, lastRequest: null, ip, email };
+    const reqData = reqSnapshot.val() || { requestCount: 0, lastRequest: null, ip: sanitizedIp, email: sanitizedEmail };
     const now = new Date();
 
     const lastRequest = reqData.lastRequest ? new Date(reqData.lastRequest) : null;
@@ -50,12 +55,12 @@ export async function POST(request: Request) {
     }
 
     if (reqData.requestCount >= requestLimit) {
-      return NextResponse.json({ message: email ? 'Monthly request limit reached (IP+email)' : 'Monthly request limit reached (IP only)', status: 429, remainingRequests: 0, limit: requestLimit, resetDate: formatDateToISO(getNextMonthFirstDay(now)), ip, email }, { status: 429 });
+      return NextResponse.json({ message: sanitizedEmail ? 'Monthly request limit reached (IP+email)' : 'Monthly request limit reached (IP only)', status: 429, remainingRequests: 0, limit: requestLimit, resetDate: formatDateToISO(getNextMonthFirstDay(now)), ip: sanitizedIp, email: sanitizedEmail }, { status: 429 });
     }
 
     const requestCount = reqData.requestCount + 1;
     const remainingRequests = requestLimit - requestCount;
-    await reqRef.update({ requestCount, lastRequest: formatDateToISO(now), ip, email });
+    await reqRef.update({ requestCount, lastRequest: formatDateToISO(now), ip: sanitizedIp, email: sanitizedEmail });
     const messages: GenericMessage[] = [
       { role: 'system', content: prompt || 'You are a helpful assistant.' },
       { role: 'user', content: content }
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
       status: 200,
       response: response.content,
       usage: response.usage,
-      user: { ip, email, requestCount, remainingRequests, requestLimit }
+      user: { ip: sanitizedIp, email: sanitizedEmail, requestCount, remainingRequests, requestLimit }
     });
   } catch (error) {
     console.error('Error processing request:', error);

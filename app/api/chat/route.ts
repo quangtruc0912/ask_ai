@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Sanitize IP address and email for Firebase key (remove invalid characters)
     const sanitizedIp = sanitizeForFirebasePath(ip) || 'unknown';
     const sanitizedEmail = sanitizeForFirebasePath(email);
-    
+
     // Determine Firebase key and request limit
     const key = createFirebaseKey(ip, email);
     let requestLimit = 10;
@@ -148,12 +148,11 @@ export async function POST(request: Request) {
       });
     }
     console.log(conversationHistory)
-
     if (imageBase64) {
       // If image is provided, analyze the image
       messages.push({
         role: 'user',
-        content: chatMessage ? chatMessage : 'Analyze the image and answer any question it contains.',
+        content: chatMessage != '' && chatMessage != 'Empty message' && chatMessage != undefined ? chatMessage : 'Analyze the image and provide a detailed description of what you see.',
         imageBase64: imageBase64
       });
     } else if (chatMessage) {

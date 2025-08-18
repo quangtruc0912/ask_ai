@@ -39,11 +39,11 @@ export const Footer = () => {
       href: "/pricing",
       description: "Free tier and unlimited with your API key.",
     },
-    {
-      title: "Support",
-      href: "/support",
-      description: "Get help and learn more.",
-    },
+    // {
+    //   title: "Support",
+    //   href: "/support",
+    //   description: "Get help and learn more.",
+    // },
   ];
 
   return (
@@ -60,11 +60,11 @@ export const Footer = () => {
               </p>
             </div>
             <div className="flex gap-20 flex-row">
-              <div className="flex flex-col text-sm max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
+              {/* <div className="flex flex-col text-sm max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
                 <p>1 AI Avenue</p>
                 <p>San Francisco</p>
                 <p>CA 94105</p>
-              </div>
+              </div> */}
               <div className="flex flex-col text-sm max-w-lg leading-relaxed tracking-tight text-background/75 text-left">
                 <Link href="/terms">Terms of Service</Link>
                 <Link href="/privacy">Privacy Policy</Link>

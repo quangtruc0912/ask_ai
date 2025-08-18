@@ -54,11 +54,11 @@ export const Header = () => {
       href: "/pricing",
       description: "Free tier and unlimited with your API key.",
     },
-    {
-      title: "Support",
-      href: "/support",
-      description: "Get help and learn more.",
-    },
+    // {
+    //   title: "Support",
+    //   href: "/support",
+    //   description: "Get help and learn more.",
+    // },
   ];
 
   const [isOpen, setOpen] = useState(false);
@@ -123,9 +123,9 @@ export const Header = () => {
                                 {item.description}
                               </p>
                             </div>
-                            <Button size="sm" className="mt-10">
+                            {/* <Button size="sm" className="mt-10">
                               Book a call today
-                            </Button>
+                            </Button> */}
                           </div>
                           <div className="flex flex-col text-sm h-full justify-end">
                             {item.items?.map((subItem) => (
